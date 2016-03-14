@@ -4,21 +4,19 @@ using namespace std;
 matrix::matrix() {
 	M = 0;
 	N = 0;
+	values = vector<vector<double> >(0, vector<double>(0));
 }
 
 matrix::matrix(int L1, int L2) {
 	M = L1;
 	N = L2;
+	values = vector<vector<double> >(L1, vector<double>(L2,0));
 }
 
 matrix::matrix(int L1, int L2, double val) {
 	M = L1;
 	N = L2;
-	for (int i = 0; i < L1; i++) {
-		for (int j = 0; j < L2; j++) {
-			values[i][j] = val;
-		}
-	}
+	values = vector<vector<double> > (L1, vector<double>(L2,val));
 }
 
 const int matrix::col_dim() {
@@ -55,14 +53,17 @@ matrix matrix::transpose() {
 	return res;
 }
 
-const void matrix::print() {
+void matrix::print() {
 	cout << "Printing Matrix: \n";
-	for (int i = 0; i < M; i++) {
-		for (int j = 0; j < N; j++) {
-			if (j = N-1) {
-				cout << values[i][j] << "\n";
-			} else {
-				cout << values[i][j] << " ";
+	if (M == 0 || N == 0) {cout << "empty \n";}
+	else {
+		for (int i = 0; i < M; i++) {
+			for (int j = 0; j < N; j++) {
+				if (j == N-1) {
+					cout << values[i][j] << "\n";
+				} else {
+					cout << values[i][j] << " ";
+				}
 			}
 		}
 	}

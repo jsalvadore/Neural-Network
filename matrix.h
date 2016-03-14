@@ -17,5 +17,5 @@ class matrix {
 		void mod(int i, int j, double val);
 		void assign(matrix A);
 		matrix transpose();
-		void const print();
+		void print();
 };

@@ -54,6 +54,7 @@ vec vec::multiply(matrix M) {
 			for (int j = 0; j < M.col_dim(); j++) {
 				tmp = tmp + M.get(i,j)*values[j];
 			}
+			res.mod(i,tmp);
 		}
 		return res;
 	}
