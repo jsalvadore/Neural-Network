@@ -19,11 +19,11 @@ matrix::matrix(int L1, int L2, double val) {
 	values = vector<vector<double> > (L1, vector<double>(L2,val));
 }
 
-const int matrix::col_dim() {
+const int matrix::row_dim() {
 	return M;
 }
 
-const int matrix::row_dim() {
+const int matrix::col_dim() {
 	return N;
 }
 
@@ -52,6 +52,35 @@ matrix matrix::transpose() {
 	}
 	return res;
 }
+
+matrix matrix::multiply(double c) {
+	matrix res(M,N);
+	for (int i = 0; i < M; i++) {
+		for (int j = 0; j < N; j++) {
+			res.mod(i,j,c*values[i][j]);
+		}
+	}
+	return res;
+}
+
+matrix matrix::multiply(matrix A) {
+	matrix res(A.row_dim(),N);
+	cout << "Left multiple dimensions: (" << A.row_dim() << ", " << A.col_dim() << ")" << endl;
+	cout << "Right multiple dimensions: (" << M << ", " << N << ")" << endl;
+	cout << "Result dimensions: (" << res.row_dim() << ", " << res.col_dim() << ")" << endl;
+	res.print();
+	for (int i = 0; i < A.row_dim(); i++) {
+		for (int j = 0; j < N; j++) {
+			double tmp = 0;
+			for (int k = 0; k < M; k++) {
+				tmp += A.get(i,k)*values[k][j];
+			}
+			res.mod(i,j,tmp);
+		}
+	}
+	return res;
+}
+
 
 void matrix::print() {
 	cout << "Printing Matrix: \n";

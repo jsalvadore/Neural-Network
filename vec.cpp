@@ -43,6 +43,14 @@ vec vec::add(vec v) {
 	}
 }
 
+vec vec::multiply(double c) {
+	vec res(L);
+	for (int i = 0; i < L; i++) {
+		res.mod(i,c*values[i]);
+	}
+	return res;
+}
+
 vec vec::multiply(matrix M) {
 	if (L != M.col_dim()) {
 		cout << "You multiply vectors wrong \n";
@@ -93,13 +101,6 @@ void vec::print() {
 			cout << values[i] << " ";
 		} 
 		cout << "\n";
-	}
-}
-
-void vec::print(int k) {
-	if (k >= L) {cout << "Out of bounds \n";}
-	else {
-		cout << values[k] << " ";
 	}
 }
 

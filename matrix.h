@@ -11,11 +11,13 @@ class matrix {
 		matrix();
 		matrix(int L1, int L2);
 		matrix(int L1, int L2, double val);
-		const int  col_dim();
 		const int row_dim();
+		const int  col_dim();
 		double const get(int i, int j);
 		void mod(int i, int j, double val);
 		void assign(matrix A);
 		matrix transpose();
+		matrix multiply(double c);
+		matrix multiply(matrix A);
 		void print();
 };

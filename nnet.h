@@ -7,6 +7,8 @@ class nnet {
 		int n_layers;
 		vector<int> d;
 		vector<matrix> w;
+		double fprop(vec x, vector<vec> &X, vector<vec> &S);
+		void bprop(vector<vec> &X, vector<vec> &Delta);
 	public: 
 		nnet();
 		nnet(vector<int> arch);
