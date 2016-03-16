@@ -35,6 +35,10 @@ const int nnet::size() {
 	return n_layers;
 }
 
+const vector<int> nnet::arch() {
+	return d;
+}
+
 const int nnet::dim(int k) {
 	return d[k];
 }
@@ -47,13 +51,13 @@ void nnet::mod_weights(int k, matrix A) {
 	w[k].assign(A);
 }
 
-void nnet::train(vector<vector<double> > D, vector<int> y, vector<vector<double> > D_val,
-								 vector<int> y_val, double eta, int max_iter) {
+void nnet::train(vector<vector<double> > &D, vector<int> &y, vector<vector<double> > &D_val,
+								 vector<int> &y_val, double eta, int max_iter) {
 	
 	
 }
 
-vector<int> nnet::predict(vector<vector<double> > D_test, vector<int> y_test) {
+vector<int> nnet::predict(vector<vector<double> > &D_test, vector<int> &y_test) {
 	
 }
 
