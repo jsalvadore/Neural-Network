@@ -3,6 +3,9 @@
 #include <cmath>
 using namespace std;
 
+vector<vector<double> > read_csv(string file_name);
+vector<double> read_response(string file_name);
+
 class nnet {
 	private:
 		int n_layers;
@@ -10,6 +13,7 @@ class nnet {
 		vector<matrix> w;
 		vector<vec> make_input();
 		vector<vec> make_signal();
+		vector<vec> make_sensitivity();
 		vector<matrix> make_grad();
 		double fprop(vec x, vector<vec> &X, vector<vec> &S);
 		void bprop(vector<vec> &X, vector<vec> &Delta);

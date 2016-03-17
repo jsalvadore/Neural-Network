@@ -6,60 +6,6 @@
 #include <fstream>
 #include <string>
 using namespace std;
-
-vector<vector<double> > read_csv(string file_name);
-vector<double> read_response(string file_name);
-
-vector<vector<double> > read_csv(string file_name) {
-	ifstream file(file_name.c_str());
-	vector<vector<double> > res;
-	while (file.is_open() && !file.eof()) {
-		vector<double> row;
-		int start = 0;
-		int end = 0;
-		int count = 0;
-		string line;
-		getline(file,line);
-		for (int i = 0; i < line.size(); i++) {
-			if (line[i] == ',') {
-				end = i;
-				string tmp;
-				for (int j = start; j < end; j++) {
-					tmp.push_back(line[j]);
-				}
-				double num = atof(tmp.c_str());
-				row.push_back(num);
-				start = i+1;
-				count++;
-			}
-				if (count == 13) {
-					string tmp;
-					for (int j = start; j < line.size(); j++) {
-						tmp.push_back(line[j]);
-					}
-					double num = atof(tmp.c_str());
-					row.push_back(num);
-				}
-		}
-		res.push_back(row);
-	}
-	file.close();
-	return res;
-}
-
-vector<double> read_response(string file_name) {
-	ifstream file(file_name.c_str());
-	vector<double> res;
-	while(file.is_open() && !file.eof()) {
-		string entry;
-		getline(file,entry);
-		double num = atof(entry.c_str());
-		res.push_back(num);
-	}
-	file.close();
-	return res;
-}
-		
 		
 int main() {
 	//Data Set Parameters

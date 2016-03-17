@@ -1,6 +1,7 @@
 #include "nnet.h"
 using namespace std;
 
+//Public Interface
 nnet::nnet() {
 	n_layers = 0;
 	d = vector<int>(0);
@@ -76,4 +77,93 @@ void nnet::print() {
 	} else {
 		cout << "The network is empty" << endl;
 	}
+}
+
+//Private Interface
+
+vector<vec> nnet::make_input() {
+	vector<vec> res;
+	for (int i = 0; i < d.size(); i++) {
+		vec tmp(d[i]+1);
+		res.push_back(tmp);
+	}
+	return res;
+}
+
+vector<vec> nnet::make_signal() {
+	vector<vec> res;
+	for (int i = 0; i < d.size(); i++) {
+		vec tmp(d[i]);
+		res.push_back(tmp);
+	}
+	return res;
+}
+
+vector<vec> nnet::make_sensitivity() {
+	vector<vec> res;
+	for (int i = 0; i < d.size(); i++) {
+		vec tmp(d[i]);
+		res.push_back(tmp);
+	}
+	return res;
+}
+
+vector<matrix> nnet::make_grad() {
+	vector<matrix> res;
+	for (int i = 0; i < w.size(); i++) {
+		res.push_back(w.get_weights(i).multiply(0));
+	}
+	return res;
+}
+
+//Helper Functions
+
+vector<vector<double> > read_csv(string file_name) {
+	ifstream file(file_name.c_str());
+	vector<vector<double> > res;
+	while (file.is_open() && !file.eof()) {
+		vector<double> row;
+		int start = 0;
+		int end = 0;
+		int count = 0;
+		string line;
+		getline(file,line);
+		for (int i = 0; i < line.size(); i++) {
+			if (line[i] == ',') {
+				end = i;
+				string tmp;
+				for (int j = start; j < end; j++) {
+					tmp.push_back(line[j]);
+				}
+				double num = atof(tmp.c_str());
+				row.push_back(num);
+				start = i+1;
+				count++;
+			}
+				if (count == 13) {
+					string tmp;
+					for (int j = start; j < line.size(); j++) {
+						tmp.push_back(line[j]);
+					}
+					double num = atof(tmp.c_str());
+					row.push_back(num);
+				}
+		}
+		res.push_back(row);
+	}
+	file.close();
+	return res;
+}
+
+vector<double> read_response(string file_name) {
+	ifstream file(file_name.c_str());
+	vector<double> res;
+	while(file.is_open() && !file.eof()) {
+		string entry;
+		getline(file,entry);
+		double num = atof(entry.c_str());
+		res.push_back(num);
+	}
+	file.close();
+	return res;
 }
