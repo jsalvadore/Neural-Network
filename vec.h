@@ -20,4 +20,4 @@ class vec {
 		void assign(vec v);
 		vec concat(vec v);
 		void print();
-}; 
+};

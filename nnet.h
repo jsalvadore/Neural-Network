@@ -1,10 +1,16 @@
 #include "vec.h"
 #include <vector>
 #include <cmath>
+#include <algorithm>
+#include <random>
+
 using namespace std;
 
 vector<vector<double> > read_csv(string file_name);
 vector<double> read_response(string file_name);
+vector<double> compute_norms(vector<vector<double> > &D);
+double max_norm(vector<double> x);
+vec aug_one(vector<double> x);
 
 class nnet {
 	private:
@@ -14,8 +20,9 @@ class nnet {
 		vector<vec> make_input();
 		vector<vec> make_signal();
 		vector<vec> make_sensitivity();
-		vector<matrix> make_grad();
-		double fprop(vec x, vector<vec> &X, vector<vec> &S);
+		vector<matrix> make_gradient();
+		void initialize_weights(double sigma);
+		double fprop(vec x, vector<vec> &X, vector<vec> &S, vector<matrix> &G);
 		void bprop(vector<vec> &X, vector<vec> &Delta);
 	public: 
 		nnet();

@@ -12,14 +12,9 @@ nnet::nnet(vector<int> arch) {
 	n_layers = arch.size()-1;
 	d = arch;
 	w = vector<matrix>(n_layers);
-	int count = 1;
 	for (int i = 1; i < n_layers+1; i++) {
 		matrix W(d[i-1]+1,d[i],0);
-		W.print();
 		w[i-1] = W;
-		w[i-1].print();
-		cout << count << endl;
-		count++;
 	}
 }
 
@@ -54,6 +49,18 @@ void nnet::mod_weights(int k, matrix A) {
 
 void nnet::train(vector<vector<double> > &D, vector<int> &y, vector<vector<double> > &D_val,
 								 vector<int> &y_val, double eta, int max_iter) {
+	double E_in = 0;
+	double E_val = 0;
+	double E_val_min = 0;
+	int iter_opt = 0; 
+	vector<matrix> w_opt;
+	x_norms = compute_norms(D);
+	x_norm = max_norm(x_norms);
+	this -> initialize_weights(1/x_norm);
+	vector<vec> x = this -> make_input();
+	vector<vec> s = this -> make_signal();
+	vector<vec> delta = this -> make_sensitivity();
+	vector<matrix> G = this -> make_gradient();
 	
 	
 }
@@ -108,7 +115,7 @@ vector<vec> nnet::make_sensitivity() {
 	return res;
 }
 
-vector<matrix> nnet::make_grad() {
+vector<matrix> nnet::make_gradient() {
 	vector<matrix> res;
 	for (int i = 0; i < w.size(); i++) {
 		res.push_back(w.get_weights(i).multiply(0));
@@ -116,9 +123,32 @@ vector<matrix> nnet::make_grad() {
 	return res;
 }
 
+void nnet::initialize_weights(double sigma) {
+	mersenne_twister_engine generator;
+	normal_distribution<double> distribution(0,sigma);
+	for (int k = 0; k < w.size(); k++) {
+		matrix A(d[k]+1,d[k+1]);
+		for (int i = 0 ; i < d[k]+1; i++) {
+			for (int j = 0; j < d[k+1]; j++) {
+				A.mod(i,j,distribution(generator));
+			}
+		}
+		this -> mod_weights(k,A);
+	}
+}
+
+double nnet::fprop(vec x, vector<vec> &X, vector<vec> &S, vector<matrix> &G) {
+		return 0;
+}
+
+void nnet::bprop(vector<vec> &X, vector<vec> &Delta) {
+	
+}
+
+
 //Helper Functions
 
-vector<vector<double> > read_csv(string file_name) {
+vector<vector<double> > read_csv(string file_name,int dim_data) {
 	ifstream file(file_name.c_str());
 	vector<vector<double> > res;
 	while (file.is_open() && !file.eof()) {
@@ -140,7 +170,7 @@ vector<vector<double> > read_csv(string file_name) {
 				start = i+1;
 				count++;
 			}
-				if (count == 13) {
+				if (count == dim_data-1) {
 					string tmp;
 					for (int j = start; j < line.size(); j++) {
 						tmp.push_back(line[j]);
@@ -166,4 +196,26 @@ vector<double> read_response(string file_name) {
 	}
 	file.close();
 	return res;
+}
+
+vector<double> compute_norms(vector<vector<double> > &D) {
+	vector res;
+	for (int i = 0; i < D.size(); i++) {
+		double tmp = 0;
+		for (int j = 0; j < D[i].size(); i++) {
+			tmp += D[i][j]*D[i][j];
+		}
+		res.push_back(sqrt(tmp));
+	}
+}
+
+double max_norm(vector<double> x) {
+	vector<double>::const_iterator p = x.begin();
+	vector<double>::const_iterator q = x.end();
+	return *max_element(p,q);
+}
+
+vec aug_one(vector<double> x) {
+	vec one(1,1);
+	return one.concat(x);
 }

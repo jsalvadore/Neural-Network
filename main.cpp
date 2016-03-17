@@ -25,11 +25,11 @@ int main() {
 	int max_iter = 100000;
 
 	//First read in the data files
-	vector<vector<double> > D = read_csv(name);
+	vector<vector<double> > D = read_csv(name,dim_data);
 	vector<double> y = read_response(name_y);
-	vector<vector<double> > D_val = read_csv(name_val);
+	vector<vector<double> > D_val = read_csv(name_val,dim_data);
 	vector<double> y_val = read_response(name_y_val);
-	vector<vector<double> > D_test = read_csv(name_test);
+	vector<vector<double> > D_test = read_csv(name_test,dim_data);
 	vector<double> y_test = read_response(name_y_test);
 	
 	
