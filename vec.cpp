@@ -89,6 +89,14 @@ vec vec::multiply_diag(vec T) {
 	return res;
 }
 
+double vec::dot(vec v) {
+	double res = 0;
+	for (int i = 0; i < L; i++) {
+		res += v.get(i)*values[i];
+	}
+	return res;
+}
+
 matrix vec::outer_prod(vec v) {
 	matrix res(v.size(),L);
 	for (int i = 0; i < v.size(); i++) {

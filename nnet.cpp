@@ -72,7 +72,7 @@ void nnet::train(vector<vector<double> > &D, vector<int> &y, vector<vector<doubl
 			vec x = this -> aug_one(D[i]);
 			double pred = this -> fprop(x,X,S);
 			this -> bprop(X,Delta);
-			E_in += pow((X[X.size()-1][0]-y[i]),2)/N;
+			E_in += pow((X[X.size()-1].get(0)-y[i]),2)/N;
 			this -> update_gradient(X,Delta,G);
 		}
 			//Validation Phase
@@ -85,7 +85,6 @@ void nnet::train(vector<vector<double> > &D, vector<int> &y, vector<vector<doubl
 			}
 			this -> update_weights(eta,G);
 	}
-	
 }
 
 vector<double> nnet::predict1(vector<vector<double> > &D) {
@@ -187,8 +186,10 @@ void nnet::bprop(vector<vec> &X, vector<vec> &Delta) {
 
 void nnet::update_gradient(vector<vec> &X, vector<vec> &Delta, vector<matrix> &G,
 													 int y, int N) {
+	matrix G_up;
 	for (int l = 0; l <= n_layers; l++) {
-		G[l].assign(Delta[l].multiply(X[l]).multiply(2*(X[X.size()-1].get(0)-y)/N));
+		G_up.assign(X[l].outer_prod(Delta[l]).multiply(2*(X[X.size()-1].get(0)-y)/N));
+		G[l].assign(G[l].add(G_up));
 	}
 }
 

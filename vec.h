@@ -20,6 +20,7 @@ class vec {
 		vec multiply(matrix M);
 		vec multiply_remove(matrix M);
 		vec multiply_diag(vec T);
+		double dot(vec v);
 		matrix outer_prod(vec v);
 		void assign(vec v);
 		vec concat(vec v);

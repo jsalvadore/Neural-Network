@@ -20,7 +20,12 @@ int main() {
 	int n_val = 1498;
 	int n_test = 7490;
 	//nnet Parameters
-	//vector<int> d = {dim_data,10,1}
+	int arch = {dim_data,10,1};
+	int arch_size = 3;
+	vector<int> d;
+	for (int i = 0; i < arch_size; i++) {
+		d.push_back(arch[i]);
+	}
 	double eta = 1.5;
 	int max_iter = 100000;
 
