@@ -31,23 +31,37 @@ const double matrix::get(int i, int j) {
 	return values[i][j];
 }
 
+vector<vector<double> > matrix::get_values() {
+	return values;
+}
+
 void matrix::mod(int i, int j, double val) {
 	values[i][j] = val;
 }
 
 void matrix::assign(matrix A) {
-	for (int i = 0; i < M; i++) {
-		for (int j = 0; j < N; j++) {
-			values[i][j] = A.get(i,j);
-		}
-	}
+	M = A.row_dim();
+	N = A.col_dim();
+	values = A.get_values();
 }
 
 matrix matrix::transpose() {
 	matrix res(N,M);
 	for (int i = 0; i < M; i++) {
 		for (int j = 0; j < N; j++) {
-			res.mod(j,i,values[i][j]);
+			if (i != j) { 
+				res.mod(j,i,values[i][j]);
+			}
+		}
+	}
+	return res;
+}
+
+matrix matrix::add(matrix A) {
+	matrix res(M,N);
+	for (int i = 0; i < M; i++) {
+		for (int j = 0; j < N; j++( {
+			res.mod(i,j,A.get(i,j)+values[i][j]);
 		}
 	}
 	return res;

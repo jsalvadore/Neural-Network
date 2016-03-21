@@ -14,9 +14,11 @@ class matrix {
 		const int row_dim();
 		const int  col_dim();
 		double const get(int i, int j);
+		vector<vector<double> > get_values();
 		void mod(int i, int j, double val);
 		void assign(matrix A);
 		matrix transpose();
+		matrix add(matrix A);
 		matrix multiply(double c);
 		matrix multiply(matrix A);
 		void print();

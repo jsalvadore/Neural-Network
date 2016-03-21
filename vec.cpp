@@ -25,6 +25,10 @@ const double vec::get(int k) {
 	return values[k];
 }
 
+vector<double> vec::get_values() {
+	return values;
+}
+
 void vec::mod(int k, double val) {
 	values[k] = val;
 }
@@ -68,13 +72,36 @@ vec vec::multiply(matrix M) {
 	}
 } 
 
-void vec::assign(vec v) {
-	if (L != v.length()) {cout << "You assign vectors wrong";}
-	else {
-		for (int i = 0; i < L; i++) {
-			values[i] = v.get(i);
+vec vec::multiply_remove(matrix M) {
+	vec tmp = this -> multiply(M);
+	vec res(tmp.length()-1);
+	for (int i = 1; i < tmp.length(); i++) {
+		res.mod(i-1,tmp.get(i));
+	}
+	return res;
+}
+
+vec vec::multiply_diag(vec T) {
+	vec res(L);
+	for (int i = 0; i < L; i++) {
+		res.mod(i,T.get(i)*values[i]);
+	}
+	return res;
+}
+
+matrix vec::outer_prod(vec v) {
+	matrix res(v.size(),L);
+	for (int i = 0; i < v.size(); i++) {
+		for (int j = 0; j < L; j++) {
+			res.mod(i,j,v.get(i)*values[j]);
 		}
 	}
+	return res;
+}
+
+void vec::assign(vec v) {
+	L = v.length();
+	values = v.get_values();
 }
 
 vec vec::concat(vec v) {

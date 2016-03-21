@@ -17,8 +17,8 @@ int main() {
 	string name_y_test = "y_test.csv";
 	int dim_data = 14;
 	int n_data = 5992;
-	int n_val;
-	int n_test;
+	int n_val = 1498;
+	int n_test = 7490;
 	//nnet Parameters
 	//vector<int> d = {dim_data,10,1}
 	double eta = 1.5;

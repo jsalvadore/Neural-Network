@@ -49,24 +49,54 @@ void nnet::mod_weights(int k, matrix A) {
 
 void nnet::train(vector<vector<double> > &D, vector<int> &y, vector<vector<double> > &D_val,
 								 vector<int> &y_val, double eta, int max_iter) {
-	double E_in = 0;
-	double E_val = 0;
-	double E_val_min = 0;
-	int iter_opt = 0; 
-	vector<matrix> w_opt;
+	//Initializing variables
+	int N = D.size();
+	double E_in;
+	double E_val;
+	double E_val_min = 10000000000;
+	vector<matrix> w_opt = w;
+	int t_opt = 0; 
+	//Initializing weights
 	x_norms = compute_norms(D);
 	x_norm = max_norm(x_norms);
 	this -> initialize_weights(1/x_norm);
-	vector<vec> x = this -> make_input();
-	vector<vec> s = this -> make_signal();
-	vector<vec> delta = this -> make_sensitivity();
-	vector<matrix> G = this -> make_gradient();
-	
+	// Initializing data structures 
+	vector<vec> X = this -> make_input();
+	vector<vec> S = this -> make_signal();
+	vector<vec> Delta = this -> make_sensitivity();
+	//Training Loop
+	for (int t = 1; t <= max_iter; t++) {
+		E_in = 0;
+		vector<matrix> G = this -> make_gradient();
+		for (int i = 0; i < D.size(); i++) {
+			vec x = this -> aug_one(D[i]);
+			double pred = this -> fprop(x,X,S);
+			this -> bprop(X,Delta);
+			E_in += pow((X[X.size()-1][0]-y[i]),2)/N;
+			this -> update_gradient(X,Delta,G);
+		}
+			//Validation Phase
+			vector<double> y_pred = this -> predict1(D_val);
+			E_val = reg_error(y_pred,y_val);
+			if (E_val < E_val_min) {
+				w_opt = w;
+				t_opt = t;
+				E_val_min = E_val;
+			}
+			this -> update_weights(eta,G);
+	}
 	
 }
 
-vector<int> nnet::predict(vector<vector<double> > &D_test, vector<int> &y_test) {
-	
+vector<double> nnet::predict1(vector<vector<double> > &D) {
+	vector<double> res;
+	vector<vec> X1 = this -> make_input();
+	vector<vec> S1 = this -> make_signal();
+	for (int i = 0; i < D.size(); i++) {
+		vec x = this -> aug_one(D[i]);
+		res.push_back(this -> fprop(x,X1,S1));
+	}
+	return res;
 }
 
 void nnet::print() {
@@ -99,7 +129,7 @@ vector<vec> nnet::make_input() {
 
 vector<vec> nnet::make_signal() {
 	vector<vec> res;
-	for (int i = 0; i < d.size(); i++) {
+	for (int i = 1; i < d.size(); i++) {
 		vec tmp(d[i]);
 		res.push_back(tmp);
 	}
@@ -108,7 +138,7 @@ vector<vec> nnet::make_signal() {
 
 vector<vec> nnet::make_sensitivity() {
 	vector<vec> res;
-	for (int i = 0; i < d.size(); i++) {
+	for (int i = 1; i < d.size(); i++) {
 		vec tmp(d[i]);
 		res.push_back(tmp);
 	}
@@ -137,14 +167,36 @@ void nnet::initialize_weights(double sigma) {
 	}
 }
 
-double nnet::fprop(vec x, vector<vec> &X, vector<vec> &S, vector<matrix> &G) {
-		return 0;
+double nnet::fprop(vec x, vector<vec> &X, vector<vec> &S) {
+	X[0] = x;
+	for (int l = 0; l < n_layers; l++) {
+		S[l].assign(X[l].multiply(w[l].transpose()));
+		X[l+1].assign(aug_one(sig_map(S[l])));
+	}
+	return X[X.size()-1].get(0);
 }
 
 void nnet::bprop(vector<vec> &X, vector<vec> &Delta) {
-	
+	Delta[Delta.size()-1] = inverse_signal(X[X.size()-1]);
+	for (int l = n_layers-1; l > 0; l--) {
+		vec T;
+		T.assign(inverse_signal(X[l]));
+		Delta[l-1].assign(Delta[l].multiply_remove(w[l]).multiply_diag(T));
+	}
 }
 
+void nnet::update_gradient(vector<vec> &X, vector<vec> &Delta, vector<matrix> &G,
+													 int y, int N) {
+	for (int l = 0; l <= n_layers; l++) {
+		G[l].assign(Delta[l].multiply(X[l]).multiply(2*(X[X.size()-1].get(0)-y)/N));
+	}
+}
+
+void nnet::update_weights(double eta, vector<matrix> &G) {
+	for (int l = 0; l <= n_layers; l++) {
+		w[l].assign(w[l].add(G[l].multiply(-eta)));
+	}
+}
 
 //Helper Functions
 
@@ -217,5 +269,42 @@ double max_norm(vector<double> x) {
 
 vec aug_one(vector<double> x) {
 	vec one(1,1);
-	return one.concat(x);
+	vec arg(x.size());
+	for (int i = 0; i < x.size(); i++) {
+		arg.mod(i,x[i]);
+	}
+	return one.concat(arg);
+}
+
+vector<double> sig_map(vec s) {
+	vector<double> res;
+	for (int i = 0; i < s.length(); i++) {
+		res.push_back(tanh(s.get(i)));
+	}
+	return res;
+}
+
+vec inverse_signal(vec x) {
+	if (x.length() == 1) {
+		vec res(1,x.get(0));
+		return res;
+	} else {
+		vec res(x.length()-1);
+		for (int i = 0; i < x.length(); i++) {
+			res.mod(i,(1-pow(x.get(i),2)));
+		}
+		return res;
+	}
+}
+
+double reg_error(vector<double> y_pred, vector<int> y) {
+	if (y_pred.size() == y_size()) {
+		double E = 0;
+		for (int i = 0; i < y.size(); i++) {
+			E += pow((y_pred[i]-y[i]),2);
+		}
+		E = E/y.size();
+		return E;
+	}
+	else {return -1;}
 }
