@@ -3,32 +3,32 @@ using namespace std;
 
 //Public Interface
 nnet::nnet() {
-	n_layers = 0;
+	L = 0;
 	d = vector<int>(0);
 	w = vector<matrix>(0);
 }
 
 nnet::nnet(vector<int> arch) {
-	n_layers = arch.size()-1;
+	L = arch.size()-1;
 	d = arch;
-	w = vector<matrix>(n_layers);
-	for (int i = 1; i < n_layers+1; i++) {
+	w = vector<matrix>(L);
+	for (int i = 1; i < L+1; i++) {
 		matrix W(d[i-1]+1,d[i],0);
 		w[i-1] = W;
 	}
 }
 
 nnet::nnet(vector<int> arch, vector<matrix> W) {
-	n_layers = arch.size()-1;
+	L = arch.size()-1;
 	d = arch;
-	w = vector<matrix>(n_layers);
-	for (int i = 0; i < n_layers; i++) {
+	w = vector<matrix>(L);
+	for (int i = 0; i < L; i++) {
 		w[i] = W[i];
 	}
 }
 
 const int nnet::size() {
-	return n_layers;
+	return L-1;
 }
 
 const vector<int> nnet::arch() {
@@ -72,15 +72,15 @@ void nnet::train(vector<vector<double> > &D, vector<int> &y, vector<vector<doubl
 			vec x = this -> aug_one(D[i]);
 			double pred = this -> fprop(x,X,S);
 			this -> bprop(X,Delta);
-			E_in += pow((X[X.size()-1].get(0)-y[i]),2)/N;
-			this -> update_gradient(X,Delta,G);
+			E_in += pow((X[L].get(0)-y[i]),2)/N;
+			this -> update_gradient(X,Delta,G,y[i],N);
 		}
 			//Validation Phase
 			vector<double> y_pred = this -> predict1(D_val);
 			E_val = reg_error(y_pred,y_val);
 			if (E_val < E_val_min) {
 				w_opt = w;
-				t_opt = t;
+				t_opt = t-1;
 				E_val_min = E_val;
 			}
 			this -> update_weights(eta,G);
@@ -99,14 +99,14 @@ vector<double> nnet::predict1(vector<vector<double> > &D) {
 }
 
 void nnet::print() {
-	if (n_layers > 0) {
-		cout << "Printing a nnet with " << n_layers << " hidden units" << endl;
+	if (L > 0) {
+		cout << "Printing a nnet with " << L << " hidden units" << endl;
 		cout << "The architecture is: " << endl;
-		for (int i = 0; i < n_layers; i++) {
+		for (int i = 0; i < L; i++) {
 			cout << d[i] << " ";
 		}
 		cout << endl;
-		for (int i = 0; i < n_layers; i++) {
+		for (int i = 0; i < L; i++) {
 			cout << "Layer " << i+1 << ":" << endl;
 			w[i].print();
 		}
@@ -119,7 +119,7 @@ void nnet::print() {
 
 vector<vec> nnet::make_input() {
 	vector<vec> res;
-	for (int i = 0; i < d.size(); i++) {
+	for (int i = 0; i <= L; i++) {
 		vec tmp(d[i]+1);
 		res.push_back(tmp);
 	}
@@ -128,7 +128,7 @@ vector<vec> nnet::make_input() {
 
 vector<vec> nnet::make_signal() {
 	vector<vec> res;
-	for (int i = 1; i < d.size(); i++) {
+	for (int i = 1; i <= L; i++) {
 		vec tmp(d[i]);
 		res.push_back(tmp);
 	}
@@ -137,7 +137,7 @@ vector<vec> nnet::make_signal() {
 
 vector<vec> nnet::make_sensitivity() {
 	vector<vec> res;
-	for (int i = 1; i < d.size(); i++) {
+	for (int i = 1; i <= L; i++) {
 		vec tmp(d[i]);
 		res.push_back(tmp);
 	}
@@ -146,7 +146,7 @@ vector<vec> nnet::make_sensitivity() {
 
 vector<matrix> nnet::make_gradient() {
 	vector<matrix> res;
-	for (int i = 0; i < w.size(); i++) {
+	for (int i = 0; i < L; i++) {
 		res.push_back(w.get_weights(i).multiply(0));
 	}
 	return res;
@@ -155,46 +155,46 @@ vector<matrix> nnet::make_gradient() {
 void nnet::initialize_weights(double sigma) {
 	mersenne_twister_engine generator;
 	normal_distribution<double> distribution(0,sigma);
-	for (int k = 0; k < w.size(); k++) {
+	for (int k = 0; k < L; k++) {
 		matrix A(d[k]+1,d[k+1]);
 		for (int i = 0 ; i < d[k]+1; i++) {
 			for (int j = 0; j < d[k+1]; j++) {
 				A.mod(i,j,distribution(generator));
 			}
 		}
-		this -> mod_weights(k,A);
+		w[k].assign(A);
 	}
 }
 
 double nnet::fprop(vec x, vector<vec> &X, vector<vec> &S) {
-	X[0] = x;
-	for (int l = 0; l < n_layers; l++) {
+	X[0].assign(x);
+	for (int l = 0; l < L; l++) {
 		S[l].assign(X[l].multiply(w[l].transpose()));
 		X[l+1].assign(aug_one(sig_map(S[l])));
 	}
-	return X[X.size()-1].get(0);
+	return X[L].get(0);
 }
 
 void nnet::bprop(vector<vec> &X, vector<vec> &Delta) {
-	Delta[Delta.size()-1] = inverse_signal(X[X.size()-1]);
-	for (int l = n_layers-1; l > 0; l--) {
+	Delta[L-1].assign(inverse_signal(X[L]));
+	for (int l = L-2; l >= 0; l--) {
 		vec T;
-		T.assign(inverse_signal(X[l]));
-		Delta[l-1].assign(Delta[l].multiply_remove(w[l]).multiply_diag(T));
+		T.assign(inverse_signal(X[l+1]));
+		Delta[l].assign(Delta[l+1].multiply_remove(w[l+1]).multiply_diag(T));
 	}
 }
 
 void nnet::update_gradient(vector<vec> &X, vector<vec> &Delta, vector<matrix> &G,
 													 int y, int N) {
 	matrix G_up;
-	for (int l = 0; l <= n_layers; l++) {
-		G_up.assign(X[l].outer_prod(Delta[l]).multiply(2*(X[X.size()-1].get(0)-y)/N));
+	for (int l = 0; l < L; l++) {
+		G_up.assign(Delta[l].outer_prod(X[l]).multiply(2*(X[L].get(0)-y)/N));
 		G[l].assign(G[l].add(G_up));
 	}
 }
 
 void nnet::update_weights(double eta, vector<matrix> &G) {
-	for (int l = 0; l <= n_layers; l++) {
+	for (int l = 0; l < L; l++) {
 		w[l].assign(w[l].add(G[l].multiply(-eta)));
 	}
 }
@@ -248,6 +248,18 @@ vector<double> read_response(string file_name) {
 		res.push_back(num);
 	}
 	file.close();
+	return res;
+}
+
+vector<int> relabel(vector<int> y) {
+	vector<int> res;
+	for (int i = 0; i < y.size(); i++) {
+		if (y[i] == 0) {
+			res.push_back(-1);
+		} else {
+			res.push_back(1);
+		}
+	}
 	return res;
 }
 

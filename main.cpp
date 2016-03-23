@@ -16,15 +16,15 @@ int main() {
 	string name_test = "D_test.csv";
 	string name_y_test = "y_test.csv";
 	int dim_data = 14;
-	int n_data = 5992;
+	int n_train = 5992;
 	int n_val = 1498;
 	int n_test = 7490;
 	//nnet Parameters
-	int arch = {dim_data,10,1};
+	int architecture = {dim_data,10,1};
 	int arch_size = 3;
 	vector<int> d;
 	for (int i = 0; i < arch_size; i++) {
-		d.push_back(arch[i]);
+		d.push_back(architecture[i]);
 	}
 	double eta = 1.5;
 	int max_iter = 100000;
@@ -36,6 +36,10 @@ int main() {
 	vector<double> y_val = read_response(name_y_val);
 	vector<vector<double> > D_test = read_csv(name_test,dim_data);
 	vector<double> y_test = read_response(name_y_test);
+	//Relabeling
+	y = relabel(y);
+	y_val = relabel(y_val);
+	y_test = relabel(y_test);
 	
 	
 	return 0;

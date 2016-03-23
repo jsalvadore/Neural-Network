@@ -8,6 +8,7 @@ using namespace std;
 
 vector<vector<double> > read_csv(string file_name);
 vector<double> read_response(string file_name);
+vector<int> relabel(vector<int> y);
 vector<double> compute_norms(vector<vector<double> > &D);
 double max_norm(vector<double> x);
 vec aug_one(vector<double> x);
@@ -17,7 +18,7 @@ double reg_error(vector<double> y_pred, vector<int> y);
 
 class nnet {
 	private:
-		int n_layers;
+		int L;
 		vector<int> d;
 		vector<matrix> w;
 		vector<vec> make_input();
