@@ -57,50 +57,63 @@ void nnet::train(vector<vector<double> > &D, vector<int> &y, vector<vector<doubl
 	vector<matrix> w_opt = w;
 	int t_opt = 0; 
 	//Initializing weights
-	vector<double> x_norms = compute_norms(D);
-	double x_norm = max_norm(x_norms);
-	this -> initialize_weights(1/x_norm);
+	//vector<double> x_norms = compute_norms(D);
+	//double x_norm = max_norm(x_norms);
+	this -> initialize_weights(1/17000);
+	for (int i = 0; i < L; i++) {
+		w[i].print();
+	}
 	// Initializing data structures 
 	vector<vec> X = this -> make_input();
 	vector<vec> S = this -> make_signal();
 	vector<vec> Delta = this -> make_sensitivity();
+	 for (int i = 0; i < X.size(); i++) {
+		X[i].print();
+	}
+	for (int i = 0; i < S.size(); i++) {
+		S[i].print();
+	}
+	for (int i = 0; i < Delta.size(); i++) {
+		Delta[i].print();
+	} 
 	//Training Loop
 	for (int t = 1; t <= max_iter; t++) {
 		E_in = 0;
 		vector<matrix> G = this -> make_gradient();
-		for (int i = 0; i < D.size(); i++) {
-			vec x = aug_one(D[i]);
+		for (int i = 0; i < 10; i++) {
+			vec x;
+			x.assign(aug_one(D[i]));
 			double pred = this -> fprop(x,X,S);
 			this -> bprop(X,Delta);
-			E_in += pow((X[L].get(0)-y[i]),2)/N;
+			E_in += pow((X[L].get(1)-y[i]),2)/N;
 			this -> update_gradient(X,Delta,G,y[i],N);
 		}
 			//Validation Phase
-			vector<double> y_pred = this -> predict1(D_val);
+			vector<double> y_pred = this -> predict1(D_val,X,S);
 			E_val = reg_error(y_pred,y_val);
 			if (E_val < E_val_min) {
 				w_opt = w;
 				t_opt = t-1;
 				E_val_min = E_val;
 			}
-			this -> update_weights(eta,G);
+			this -> update_weights(eta,G); 
 	}
+	cout << "Optimal Validation error is: " << E_val_min << endl;
 }
 
-vector<double> nnet::predict1(vector<vector<double> > &D) {
+vector<double> nnet::predict1(vector<vector<double> > &D, vector<vec> &X, vector<vec> &S) {
 	vector<double> res;
-	vector<vec> X1 = this -> make_input();
-	vector<vec> S1 = this -> make_signal();
-	for (int i = 0; i < D.size(); i++) {
-		vec x = aug_one(D[i]);
-		res.push_back(this -> fprop(x,X1,S1));
+	for (int i = 0; i < 5; i++) {
+		vec x;
+		x.assign(aug_one(D[i]));
+		res.push_back(this -> fprop(x,X,S));
 	}
 	return res;
 }
 
 void nnet::print() {
 	if (L > 0) {
-		cout << "Printing a nnet with " << L << " hidden units" << endl;
+		cout << "Printing a nnet with " << L-1 << " hidden units" << endl;
 		cout << "The architecture is: " << endl;
 		for (int i = 0; i < L; i++) {
 			cout << d[i] << " ";
@@ -172,7 +185,7 @@ double nnet::fprop(vec x, vector<vec> &X, vector<vec> &S) {
 		S[l].assign(X[l].multiply(w[l].transpose()));
 		X[l+1].assign(aug_one(sig_map(S[l])));
 	}
-	return X[L].get(0);
+	return X[L].get(1);
 }
 
 void nnet::bprop(vector<vec> &X, vector<vec> &Delta) {
@@ -188,7 +201,7 @@ void nnet::update_gradient(vector<vec> &X, vector<vec> &Delta, vector<matrix> &G
 													 int y, int N) {
 	matrix G_up;
 	for (int l = 0; l < L; l++) {
-		G_up.assign(Delta[l].outer_prod(X[l]).multiply(2*(X[L].get(0)-y)/N));
+		G_up.assign(Delta[l].outer_prod(X[l]).multiply(2*(X[L].get(1)-y)/N));
 		G[l].assign(G[l].add(G_up));
 	}
 }
@@ -230,6 +243,7 @@ vector<vector<double> > read_csv(string file_name,int dim_data) {
 					}
 					double num = atof(tmp.c_str());
 					row.push_back(num);
+					break;
 				}
 		}
 		res.push_back(row);
@@ -263,12 +277,12 @@ vector<int> relabel(vector<int> y) {
 	return res;
 }
 
-vector<double> compute_norms(vector<vector<double> > &D) {
+vector<double> compute_norms(vector<vector<double> > D) {
 	vector<double> res;
 	for (int i = 0; i < D.size(); i++) {
 		double tmp = 0;
 		for (int j = 0; j < D[i].size(); j++) {
-			tmp += D[i][j]*D[i][j];
+			tmp += pow(D[i][j],2);
 		}
 		res.push_back(sqrt(tmp));
 	}
@@ -280,11 +294,11 @@ double max_norm(vector<double> x) {
 	return *max_element(p,q);
 }
 
-vec aug_one(vector<double> x) {
+vec aug_one(vector<double> v) {
 	vec one(1,1);
-	vec arg(x.size());
-	for (int i = 0; i < x.size(); i++) {
-		arg.mod(i,x[i]);
+	vec arg(v.size());
+	for (int i = 0; i < v.size(); i++) {
+		arg.mod(i,v[i]);
 	}
 	return one.concat(arg);
 }

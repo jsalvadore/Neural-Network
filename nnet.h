@@ -12,7 +12,7 @@ using namespace std;
 vector<vector<double> > read_csv(string file_name, int dim_data);
 vector<int> read_response(string file_name);
 vector<int> relabel(vector<int> y);
-vector<double> compute_norms(vector<vector<double> > &D);
+vector<double> compute_norms(vector<vector<double> > D);
 double max_norm(vector<double> x);
 vec aug_one(vector<double> x);
 vector<double> sig_map(vec s);
@@ -31,7 +31,7 @@ class nnet {
 		void initialize_weights(double sigma);
 		double fprop(vec x, vector<vec> &X, vector<vec> &S);
 		void bprop(vector<vec> &X, vector<vec> &Delta);
-		vector<double> predict1(vector<vector<double> > &D);
+		vector<double> predict1(vector<vector<double> > &D, vector<vec> &X, vector<vec> &S);
 		void update_gradient(vector<vec> &X, vector<vec> &Delta, vector<matrix> &G, 
 												 int y, int N);
 		void update_weights(double eta, vector<matrix> &G);

@@ -23,8 +23,8 @@ int main() {
 	d.push_back(dim_data);
 	d.push_back(10);
 	d.push_back(1);
-	double eta = 1.5;
-	int max_iter = 100000;
+	double eta = 1;
+	int max_iter = 1;
 
 	//First read in the data files
 	vector<vector<double> > D = read_csv(name,dim_data);
@@ -36,11 +36,14 @@ int main() {
 	//Relabeling
 	y = relabel(y);
 	y_val = relabel(y_val);
-	y_test = relabel(y_test);
-	
+	y_test = relabel(y_test); 
+		
 	//Initialize the network
 	nnet network(d);
 	network.print();
+	network.train(D,y,D_val,y_val,eta,max_iter);
+	network.print();
+
 	
 	return 0;
 }

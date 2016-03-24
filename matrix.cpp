@@ -49,9 +49,7 @@ matrix matrix::transpose() {
 	matrix res(N,M);
 	for (int i = 0; i < M; i++) {
 		for (int j = 0; j < N; j++) {
-			if (i != j) { 
-				res.mod(j,i,values[i][j]);
-			}
+			res.mod(j,i,values[i][j]);
 		}
 	}
 	return res;
