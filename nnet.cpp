@@ -57,8 +57,8 @@ void nnet::train(vector<vector<double> > &D, vector<int> &y, vector<vector<doubl
 	vector<matrix> w_opt = w;
 	int t_opt = 0; 
 	//Initializing weights
-	x_norms = compute_norms(D);
-	x_norm = max_norm(x_norms);
+	vector<double> x_norms = compute_norms(D);
+	double x_norm = max_norm(x_norms);
 	this -> initialize_weights(1/x_norm);
 	// Initializing data structures 
 	vector<vec> X = this -> make_input();
@@ -69,7 +69,7 @@ void nnet::train(vector<vector<double> > &D, vector<int> &y, vector<vector<doubl
 		E_in = 0;
 		vector<matrix> G = this -> make_gradient();
 		for (int i = 0; i < D.size(); i++) {
-			vec x = this -> aug_one(D[i]);
+			vec x = aug_one(D[i]);
 			double pred = this -> fprop(x,X,S);
 			this -> bprop(X,Delta);
 			E_in += pow((X[L].get(0)-y[i]),2)/N;
@@ -92,7 +92,7 @@ vector<double> nnet::predict1(vector<vector<double> > &D) {
 	vector<vec> X1 = this -> make_input();
 	vector<vec> S1 = this -> make_signal();
 	for (int i = 0; i < D.size(); i++) {
-		vec x = this -> aug_one(D[i]);
+		vec x = aug_one(D[i]);
 		res.push_back(this -> fprop(x,X1,S1));
 	}
 	return res;
@@ -147,13 +147,13 @@ vector<vec> nnet::make_sensitivity() {
 vector<matrix> nnet::make_gradient() {
 	vector<matrix> res;
 	for (int i = 0; i < L; i++) {
-		res.push_back(w.get_weights(i).multiply(0));
+		res.push_back(w[i].multiply(0));
 	}
 	return res;
 }
 
 void nnet::initialize_weights(double sigma) {
-	mersenne_twister_engine generator;
+	default_random_engine generator;
 	normal_distribution<double> distribution(0,sigma);
 	for (int k = 0; k < L; k++) {
 		matrix A(d[k]+1,d[k+1]);
@@ -238,13 +238,13 @@ vector<vector<double> > read_csv(string file_name,int dim_data) {
 	return res;
 }
 
-vector<double> read_response(string file_name) {
+vector<int> read_response(string file_name) {
 	ifstream file(file_name.c_str());
-	vector<double> res;
+	vector<int> res;
 	while(file.is_open() && !file.eof()) {
 		string entry;
 		getline(file,entry);
-		double num = atof(entry.c_str());
+		int num = atof(entry.c_str());
 		res.push_back(num);
 	}
 	file.close();
@@ -264,10 +264,10 @@ vector<int> relabel(vector<int> y) {
 }
 
 vector<double> compute_norms(vector<vector<double> > &D) {
-	vector res;
+	vector<double> res;
 	for (int i = 0; i < D.size(); i++) {
 		double tmp = 0;
-		for (int j = 0; j < D[i].size(); i++) {
+		for (int j = 0; j < D[i].size(); j++) {
 			tmp += D[i][j]*D[i][j];
 		}
 		res.push_back(sqrt(tmp));
@@ -311,7 +311,7 @@ vec inverse_signal(vec x) {
 }
 
 double reg_error(vector<double> y_pred, vector<int> y) {
-	if (y_pred.size() == y_size()) {
+	if (y_pred.size() == y.size()) {
 		double E = 0;
 		for (int i = 0; i < y.size(); i++) {
 			E += pow((y_pred[i]-y[i]),2);

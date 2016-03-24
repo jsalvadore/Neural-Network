@@ -60,7 +60,7 @@ matrix matrix::transpose() {
 matrix matrix::add(matrix A) {
 	matrix res(M,N);
 	for (int i = 0; i < M; i++) {
-		for (int j = 0; j < N; j++( {
+		for (int j = 0; j < N; j++) {
 			res.mod(i,j,A.get(i,j)+values[i][j]);
 		}
 	}

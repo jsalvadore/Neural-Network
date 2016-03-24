@@ -98,8 +98,8 @@ double vec::dot(vec v) {
 }
 
 matrix vec::outer_prod(vec v) {
-	matrix res(v.size(),L);
-	for (int i = 0; i < v.size(); i++) {
+	matrix res(v.length(),L);
+	for (int i = 0; i < v.length(); i++) {
 		for (int j = 0; j < L; j++) {
 			res.mod(i,j,v.get(i)*values[j]);
 		}
