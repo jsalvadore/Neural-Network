@@ -12,19 +12,20 @@ int main() {
 	string name_y_val = "y_val.csv";
 	string name_test = "D_test.csv";
 	string name_y_test = "y_test.csv";
-	int L = 1;
-	int dim_data = 14;
-	int n_train = 5992;
-	int n_val = 1498;
-	int n_test = 7490;
+	int dim_data = 30;
+	int n_train = 255;
+	int n_val = 86;
+	int n_test = 228;
 	//nnet Parameters
-	int arch_size = L=2;
+	int L = 2;
 	vector<int> d;
 	d.push_back(dim_data);
-	d.push_back(10);
+	d.push_back(20);
 	d.push_back(1);
 	double eta = 1;
-	int max_iter = 1;
+	double alpha = 1.1;
+	double beta = .8;
+	int max_iter = 1000;
 
 	//First read in the data files
 	vector<vector<double> > D = read_csv(name,dim_data);
@@ -32,17 +33,19 @@ int main() {
 	vector<vector<double> > D_val = read_csv(name_val,dim_data);
 	vector<int> y_val = read_response(name_y_val);
 	vector<vector<double> > D_test = read_csv(name_test,dim_data);
-	vector<int> y_test = read_response(name_y_test);
-	//Relabeling
-	y = relabel(y);
-	y_val = relabel(y_val);
-	y_test = relabel(y_test); 
+	vector<int> y_test = read_response(name_y_test); 
+
+	D.pop_back();
+	y.pop_back();
+	D_val.pop_back();
+	y_val.pop_back();
+	D_test.pop_back();
+	y_test.pop_back(); 
 		
 	//Initialize the network
 	nnet network(d);
-	network.print();
-	network.train(D,y,D_val,y_val,eta,max_iter);
-	network.print();
+	network.train(D,y,D_val,y_val,eta,alpha,beta,max_iter);
+	//network.print();
 
 	
 	return 0;

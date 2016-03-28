@@ -48,65 +48,66 @@ void nnet::mod_weights(int k, matrix A) {
 }
 
 void nnet::train(vector<vector<double> > &D, vector<int> &y, vector<vector<double> > &D_val,
-								 vector<int> &y_val, double eta, int max_iter) {
+								 vector<int> &y_val, double eta, double alpha, double beta, int max_iter) {
 	//Initializing variables
 	int N = D.size();
 	double E_in;
+	double E_in_min = 100000000000000;
 	double E_val;
-	double E_val_min = 10000000000;
+	double E_val_min = 100000000000000;
 	vector<matrix> w_opt = w;
 	int t_opt = 0; 
 	//Initializing weights
 	//vector<double> x_norms = compute_norms(D);
 	//double x_norm = max_norm(x_norms);
-	this -> initialize_weights(1/17000);
-	for (int i = 0; i < L; i++) {
-		w[i].print();
-	}
+	this -> initialize_weights(.5);
 	// Initializing data structures 
 	vector<vec> X = this -> make_input();
 	vector<vec> S = this -> make_signal();
 	vector<vec> Delta = this -> make_sensitivity();
-	 for (int i = 0; i < X.size(); i++) {
-		X[i].print();
-	}
-	for (int i = 0; i < S.size(); i++) {
-		S[i].print();
-	}
-	for (int i = 0; i < Delta.size(); i++) {
-		Delta[i].print();
-	} 
+	vector<matrix> G = this -> make_gradient();
+	vec x;
 	//Training Loop
-	for (int t = 1; t <= max_iter; t++) {
+	int t  = 1;
+	while (t <= max_iter) {
 		E_in = 0;
-		vector<matrix> G = this -> make_gradient();
-		for (int i = 0; i < 10; i++) {
-			vec x;
+		this -> clear_gradient(G); 
+		for (int i = 0; i < D.size(); i++) {
 			x.assign(aug_one(D[i]));
 			double pred = this -> fprop(x,X,S);
 			this -> bprop(X,Delta);
-			E_in += pow((X[L].get(1)-y[i]),2)/N;
+			E_in += pow((pred-y[i]),2)/N;
 			this -> update_gradient(X,Delta,G,y[i],N);
 		}
+		if (E_in < E_in_min) {
+			E_in_min = E_in; 
+			eta = alpha*eta;
+			this -> update_weights(eta,G);
 			//Validation Phase
 			vector<double> y_pred = this -> predict1(D_val,X,S);
 			E_val = reg_error(y_pred,y_val);
 			if (E_val < E_val_min) {
 				w_opt = w;
-				t_opt = t-1;
+				t_opt = t;
 				E_val_min = E_val;
 			}
-			this -> update_weights(eta,G); 
+			t++;
+			cout << "E_in: " << E_in << endl;
+			cout << "E_val : " << E_val << endl;
+		} else {
+			eta = beta*eta;
+			cout << "No improvement, adjusting learning rate to " << eta << endl;
+		}
 	}
-	cout << "Optimal Validation error is: " << E_val_min << endl;
+	cout << "Optimal Validation error is: " << E_val_min << endl; 
 }
 
 vector<double> nnet::predict1(vector<vector<double> > &D, vector<vec> &X, vector<vec> &S) {
-	vector<double> res;
-	for (int i = 0; i < 5; i++) {
+	vector<double> res(D.size());
+	for (int i = 0; i < D.size(); i++) {
 		vec x;
 		x.assign(aug_one(D[i]));
-		res.push_back(this -> fprop(x,X,S));
+		res[i] = this -> fprop(x,X,S);
 	}
 	return res;
 }
@@ -130,41 +131,6 @@ void nnet::print() {
 
 //Private Interface
 
-vector<vec> nnet::make_input() {
-	vector<vec> res;
-	for (int i = 0; i <= L; i++) {
-		vec tmp(d[i]+1);
-		res.push_back(tmp);
-	}
-	return res;
-}
-
-vector<vec> nnet::make_signal() {
-	vector<vec> res;
-	for (int i = 1; i <= L; i++) {
-		vec tmp(d[i]);
-		res.push_back(tmp);
-	}
-	return res;
-}
-
-vector<vec> nnet::make_sensitivity() {
-	vector<vec> res;
-	for (int i = 1; i <= L; i++) {
-		vec tmp(d[i]);
-		res.push_back(tmp);
-	}
-	return res;
-}
-
-vector<matrix> nnet::make_gradient() {
-	vector<matrix> res;
-	for (int i = 0; i < L; i++) {
-		res.push_back(w[i].multiply(0));
-	}
-	return res;
-}
-
 void nnet::initialize_weights(double sigma) {
 	default_random_engine generator;
 	normal_distribution<double> distribution(0,sigma);
@@ -179,6 +145,53 @@ void nnet::initialize_weights(double sigma) {
 	}
 }
 
+vector<vec> nnet::make_input() {
+	vector<vec> res(L+1);
+	for (int i = 0; i <= L; i++) {
+		vec tmp(d[i]+1);
+		res[i].assign(tmp);
+	}
+	return res;
+}
+
+vector<vec> nnet::make_signal() {
+	vector<vec> res(L);
+	for (int i = 1; i <= L; i++) {
+		vec tmp(d[i]);
+		res[i-1].assign(tmp);
+	}
+	return res;
+}
+
+vector<vec> nnet::make_sensitivity() {
+	vector<vec> res(L);
+	for (int i = 1; i <= L; i++) {
+		vec tmp(d[i]);
+		res[i-1].assign(tmp);
+	}
+	return res;
+}
+
+vector<matrix> nnet::make_gradient() {
+	vector<matrix> res(L);
+	for (int i = 0; i < L; i++) {
+		res[i].assign(w[i].multiply(0));
+	}
+	return res;
+}
+
+void nnet::clear_gradient(vector<matrix> &G) {
+	for (int k = 0; k < G.size(); k++) {
+		for (int i = 0; i < G[k].row_dim(); i++) {
+			for (int j = 0; j < G[k].col_dim(); j++) {
+				G[k].mod(i,j,0);
+			}
+		}
+	}
+}
+
+
+
 double nnet::fprop(vec x, vector<vec> &X, vector<vec> &S) {
 	X[0].assign(x);
 	for (int l = 0; l < L; l++) {
@@ -189,7 +202,7 @@ double nnet::fprop(vec x, vector<vec> &X, vector<vec> &S) {
 }
 
 void nnet::bprop(vector<vec> &X, vector<vec> &Delta) {
-	Delta[L-1].assign(inverse_signal(X[L]));
+	Delta[L-1].assign(inverse_signal(X[L])); //This is problematic
 	for (int l = L-2; l >= 0; l--) {
 		vec T;
 		T.assign(inverse_signal(X[l+1]));
@@ -265,18 +278,6 @@ vector<int> read_response(string file_name) {
 	return res;
 }
 
-vector<int> relabel(vector<int> y) {
-	vector<int> res;
-	for (int i = 0; i < y.size(); i++) {
-		if (y[i] == 0) {
-			res.push_back(-1);
-		} else {
-			res.push_back(1);
-		}
-	}
-	return res;
-}
-
 vector<double> compute_norms(vector<vector<double> > D) {
 	vector<double> res;
 	for (int i = 0; i < D.size(); i++) {
@@ -312,16 +313,11 @@ vector<double> sig_map(vec s) {
 }
 
 vec inverse_signal(vec x) {
-	if (x.length() == 1) {
-		vec res(1,x.get(0));
-		return res;
-	} else {
-		vec res(x.length()-1);
-		for (int i = 0; i < x.length(); i++) {
-			res.mod(i,(1-pow(x.get(i),2)));
-		}
-		return res;
+	vec res(x.length()-1);
+	for (int i = 1; i < x.length(); i++) {
+		res.mod(i-1,(1-pow(x.get(i),2)));
 	}
+	return res;
 }
 
 double reg_error(vector<double> y_pred, vector<int> y) {
@@ -333,5 +329,5 @@ double reg_error(vector<double> y_pred, vector<int> y) {
 		E = E/y.size();
 		return E;
 	}
-	else {return -1;}
+	else {return 100000000000000000;}
 }
