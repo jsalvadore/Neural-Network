@@ -12,20 +12,19 @@ int main() {
 	string name_y_val = "y_val.csv";
 	string name_test = "D_test.csv";
 	string name_y_test = "y_test.csv";
-	int dim_data = 30;
-	int n_train = 255;
-	int n_val = 86;
-	int n_test = 228;
+	int dim_data = 2;
+	int n_train = 800;
+	int n_val = 200;
+	int n_test = 1000;
 	//nnet Parameters
-	int L = 2;
+	int L = 3;
+	//The architecture
 	vector<int> d;
 	d.push_back(dim_data);
-	d.push_back(20);
+	d.push_back(10);
 	d.push_back(1);
 	double eta = 1;
-	double alpha = 1.1;
-	double beta = .8;
-	int max_iter = 1000;
+	int max_iter = 100;
 
 	//First read in the data files
 	vector<vector<double> > D = read_csv(name,dim_data);
@@ -43,9 +42,21 @@ int main() {
 	y_test.pop_back(); 
 		
 	//Initialize the network
+	cout << "Initializing Network" << endl;
 	nnet network(d);
-	network.train(D,y,D_val,y_val,eta,alpha,beta,max_iter);
-	//network.print();
+	//Train the Network
+	cout << "Training the Network" << endl;
+	network.train(D,y,D_val,y_val,eta,max_iter);
+	//Prediction
+	vector<int> y_pred = network.predict(D_test);
+	//Compute Error
+	double E_test = 0;
+	for (int i = 0; i < y_test.size(); i++) {
+		if (y_pred[i] != y_test[i]) {E_test++;}
+	}
+	E_test = E_test/n_test;
+	
+	cout << "The final test error is: " << E_test << endl; 
 
 	
 	return 0;

@@ -77,10 +77,6 @@ matrix matrix::multiply(double c) {
 
 matrix matrix::multiply(matrix A) {
 	matrix res(A.row_dim(),N);
-	cout << "Left multiple dimensions: (" << A.row_dim() << ", " << A.col_dim() << ")" << endl;
-	cout << "Right multiple dimensions: (" << M << ", " << N << ")" << endl;
-	cout << "Result dimensions: (" << res.row_dim() << ", " << res.col_dim() << ")" << endl;
-	res.print();
 	for (int i = 0; i < A.row_dim(); i++) {
 		for (int j = 0; j < N; j++) {
 			double tmp = 0;
@@ -91,21 +87,4 @@ matrix matrix::multiply(matrix A) {
 		}
 	}
 	return res;
-}
-
-
-void matrix::print() {
-	cout << "Printing Matrix: \n";
-	if (M == 0 || N == 0) {cout << "empty \n";}
-	else {
-		for (int i = 0; i < M; i++) {
-			for (int j = 0; j < N; j++) {
-				if (j == N-1) {
-					cout << values[i][j] << "\n";
-				} else {
-					cout << values[i][j] << " ";
-				}
-			}
-		}
-	}
 }

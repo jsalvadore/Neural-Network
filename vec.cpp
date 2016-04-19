@@ -128,14 +128,3 @@ vec vec::concat(vec v) {
 	return res;
 }
 
-void vec::print() {
-	cout << "Printing Vector of length " << L << ": \n";
-	if (L == 0) {cout << "empty \n";}
-	else {
-		for (int i = 0; i < L; i++) {
-			cout << values[i] << " ";
-		} 
-		cout << "\n";
-	}
-}
-

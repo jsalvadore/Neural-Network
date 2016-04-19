@@ -21,5 +21,4 @@ class matrix {
 		matrix add(matrix A);
 		matrix multiply(double c);
 		matrix multiply(matrix A);
-		void print();
 };

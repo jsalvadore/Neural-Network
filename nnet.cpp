@@ -47,8 +47,9 @@ void nnet::mod_weights(int k, matrix A) {
 	w[k].assign(A);
 }
 
+
 void nnet::train(vector<vector<double> > &D, vector<int> &y, vector<vector<double> > &D_val,
-								 vector<int> &y_val, double eta, double alpha, double beta, int max_iter) {
+								 vector<int> &y_val, double eta, int max_iter) {
 	//Initializing variables
 	int N = D.size();
 	double E_in;
@@ -58,75 +59,57 @@ void nnet::train(vector<vector<double> > &D, vector<int> &y, vector<vector<doubl
 	vector<matrix> w_opt = w;
 	int t_opt = 0; 
 	//Initializing weights
-	//vector<double> x_norms = compute_norms(D);
-	//double x_norm = max_norm(x_norms);
-	this -> initialize_weights(.5);
+	vector<double> x_norms = compute_norms(D);
+	double x_norm = max_norm(x_norms);
+	initialize_weights(1/x_norm);
 	// Initializing data structures 
-	vector<vec> X = this -> make_input();
-	vector<vec> S = this -> make_signal();
-	vector<vec> Delta = this -> make_sensitivity();
-	vector<matrix> G = this -> make_gradient();
+	vector<vec> X = make_input();
+	vector<vec> S = make_signal();
+	vector<vec> Delta = make_sensitivity();
+	vector<matrix> G = make_gradient();
+	vector<matrix> G_up = make_gradient();
 	vec x;
+	vector<double> y_pred(D_val.size());
 	//Training Loop
 	int t  = 1;
 	while (t <= max_iter) {
 		E_in = 0;
-		this -> clear_gradient(G); 
+		clear_gradient(G); 
+		clear_gradient(G_up);
 		for (int i = 0; i < D.size(); i++) {
 			x.assign(aug_one(D[i]));
-			double pred = this -> fprop(x,X,S);
-			this -> bprop(X,Delta);
+			double pred = fprop(x,X,S);
+			bprop(X,Delta);
 			E_in += pow((pred-y[i]),2)/N;
-			this -> update_gradient(X,Delta,G,y[i],N);
+			update_gradient(X,Delta,G,G_up,y[i],N);
 		}
-		if (E_in < E_in_min) {
-			E_in_min = E_in; 
-			eta = alpha*eta;
-			this -> update_weights(eta,G);
-			//Validation Phase
-			vector<double> y_pred = this -> predict1(D_val,X,S);
-			E_val = reg_error(y_pred,y_val);
-			if (E_val < E_val_min) {
-				w_opt = w;
-				t_opt = t;
-				E_val_min = E_val;
-			}
-			t++;
-			cout << "E_in: " << E_in << endl;
-			cout << "E_val : " << E_val << endl;
-		} else {
-			eta = beta*eta;
-			cout << "No improvement, adjusting learning rate to " << eta << endl;
+		update_weights(eta,G);
+		//Validation Phase
+		y_pred = predict1(D_val,X,S);
+		E_val = reg_error(y_pred,y_val);
+		if (E_val < E_val_min) {
+			w_opt = w;
+			t_opt = t;
+			E_val_min = E_val;
 		}
+		t++;
 	}
+	w = w_opt;
 	cout << "Optimal Validation error is: " << E_val_min << endl; 
+	cout << "This occured at iteration: " << t_opt << endl;
 }
 
-vector<double> nnet::predict1(vector<vector<double> > &D, vector<vec> &X, vector<vec> &S) {
-	vector<double> res(D.size());
-	for (int i = 0; i < D.size(); i++) {
-		vec x;
-		x.assign(aug_one(D[i]));
-		res[i] = this -> fprop(x,X,S);
+vector<int> nnet::predict(vector<vector<double> > &D_test) {
+	vector<vec> X = make_input();
+	vector<vec> S = make_signal();
+	vec x;
+	vector<int> y_pred(D_test.size());
+	for (int i = 0; i < D_test.size(); i++) {
+		x.assign(aug_one(D_test[i]));
+		double pred = fprop(x,X,S);
+		y_pred[i] = sgn(pred);
 	}
-	return res;
-}
-
-void nnet::print() {
-	if (L > 0) {
-		cout << "Printing a nnet with " << L-1 << " hidden units" << endl;
-		cout << "The architecture is: " << endl;
-		for (int i = 0; i < L; i++) {
-			cout << d[i] << " ";
-		}
-		cout << endl;
-		for (int i = 0; i < L; i++) {
-			cout << "Layer " << i+1 << ":" << endl;
-			w[i].print();
-		}
-	} else {
-		cout << "The network is empty" << endl;
-	}
+	return y_pred;
 }
 
 //Private Interface
@@ -202,20 +185,29 @@ double nnet::fprop(vec x, vector<vec> &X, vector<vec> &S) {
 }
 
 void nnet::bprop(vector<vec> &X, vector<vec> &Delta) {
-	Delta[L-1].assign(inverse_signal(X[L])); //This is problematic
+	Delta[L-1].assign(inverse_signal(X[L])); 
+	vec T;
 	for (int l = L-2; l >= 0; l--) {
-		vec T;
 		T.assign(inverse_signal(X[l+1]));
 		Delta[l].assign(Delta[l+1].multiply_remove(w[l+1]).multiply_diag(T));
 	}
 }
 
+vector<double> nnet::predict1(vector<vector<double> > &D, vector<vec> &X, vector<vec> &S) {
+	vector<double> res(D.size());
+	for (int i = 0; i < D.size(); i++) {
+		vec x;
+		x.assign(aug_one(D[i]));
+		res[i] = fprop(x,X,S);
+	}
+	return res;
+}
+
 void nnet::update_gradient(vector<vec> &X, vector<vec> &Delta, vector<matrix> &G,
-													 int y, int N) {
-	matrix G_up;
+													 vector<matrix> &G_up, int y, int N) {
 	for (int l = 0; l < L; l++) {
-		G_up.assign(Delta[l].outer_prod(X[l]).multiply(2*(X[L].get(1)-y)/N));
-		G[l].assign(G[l].add(G_up));
+		G_up[l].assign(Delta[l].outer_prod(X[l]).multiply(2*(X[L].get(1)-y)/N));
+		G[l].assign(G[l].add(G_up[l]));
 	}
 }
 
@@ -224,6 +216,7 @@ void nnet::update_weights(double eta, vector<matrix> &G) {
 		w[l].assign(w[l].add(G[l].multiply(-eta)));
 	}
 }
+
 
 //Helper Functions
 
@@ -278,7 +271,7 @@ vector<int> read_response(string file_name) {
 	return res;
 }
 
-vector<double> compute_norms(vector<vector<double> > D) {
+vector<double> compute_norms(vector<vector<double> > &D) {
 	vector<double> res;
 	for (int i = 0; i < D.size(); i++) {
 		double tmp = 0;
@@ -287,12 +280,15 @@ vector<double> compute_norms(vector<vector<double> > D) {
 		}
 		res.push_back(sqrt(tmp));
 	}
+	return res;
 }
 
-double max_norm(vector<double> x) {
-	vector<double>::const_iterator p = x.begin();
-	vector<double>::const_iterator q = x.end();
-	return *max_element(p,q);
+double max_norm(vector<double> &x) {
+	double max = 0;
+	for (int i = 0; i < x.size(); i++) {
+		if (x[i] >= max) {max = x[i];}
+	}
+	return max;
 }
 
 vec aug_one(vector<double> v) {
@@ -330,4 +326,10 @@ double reg_error(vector<double> y_pred, vector<int> y) {
 		return E;
 	}
 	else {return 100000000000000000;}
+}
+
+int sgn(double num) {
+	if (num > 0) {return 1;}
+	else if (num < 0) {return -1;}
+	else {return 0;}
 }

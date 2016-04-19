@@ -24,5 +24,4 @@ class vec {
 		matrix outer_prod(vec v);
 		void assign(vec v);
 		vec concat(vec v);
-		void print();
 };
