@@ -2,13 +2,14 @@
 using namespace std;
 
 //Public Interface
-nnet::nnet() {
+nnet::nnet() { //default constructor
 	L = 0;
 	d = vector<int>(0);
 	w = vector<matrix>(0);
 }
 
-nnet::nnet(vector<int> arch) {
+nnet::nnet(vector<int> arch) { 
+	//Constructs a network with architecture d initialized to zero weights
 	L = arch.size()-1;
 	d = arch;
 	w = vector<matrix>(L);
@@ -19,6 +20,7 @@ nnet::nnet(vector<int> arch) {
 }
 
 nnet::nnet(vector<int> arch, vector<matrix> W) {
+	//Constructs a network with architecture d initialized from a vector of weight matrices
 	L = arch.size()-1;
 	d = arch;
 	w = vector<matrix>(L);
@@ -27,29 +29,30 @@ nnet::nnet(vector<int> arch, vector<matrix> W) {
 	}
 }
 
-const int nnet::size() {
+const int nnet::size() { //Network size accessor
 	return L-1;
 }
 
-const vector<int> nnet::arch() {
+const vector<int> nnet::arch() { //Network architecture accessor
 	return d;
 }
 
-const int nnet::dim(int k) {
+const int nnet::dim(int k) { //Access the dimension of a particular layer
 	return d[k];
 }
 
-matrix nnet::get_weights(int k) {
+matrix nnet::get_weights(int k) { //Access the weight matrix of a particular layer
 	return w[k];
 }
 
-void nnet::mod_weights(int k, matrix A) {
+void nnet::mod_weights(int k, matrix A) { //Sets the weight matrix of a particular layer
 	w[k].assign(A);
 }
 
 
 void nnet::train(vector<vector<double> > &D, vector<int> &y, vector<vector<double> > &D_val,
 								 vector<int> &y_val, double eta, int max_iter) {
+	//Routine for training the neural network based on training data.
 	//Initializing variables
 	int N = D.size();
 	double E_in;
@@ -100,6 +103,7 @@ void nnet::train(vector<vector<double> > &D, vector<int> &y, vector<vector<doubl
 }
 
 vector<int> nnet::predict(vector<vector<double> > &D_test) {
+	//Routine for predicting with a network after training it
 	vector<vec> X = make_input();
 	vector<vec> S = make_signal();
 	vec x;
@@ -114,7 +118,7 @@ vector<int> nnet::predict(vector<vector<double> > &D_test) {
 
 //Private Interface
 
-void nnet::initialize_weights(double sigma) {
+void nnet::initialize_weights(double sigma) { //Randomly initialize weights
 	default_random_engine generator;
 	normal_distribution<double> distribution(0,sigma);
 	for (int k = 0; k < L; k++) {
@@ -128,7 +132,7 @@ void nnet::initialize_weights(double sigma) {
 	}
 }
 
-vector<vec> nnet::make_input() {
+vector<vec> nnet::make_input() { //Constructs data structure for input vectors
 	vector<vec> res(L+1);
 	for (int i = 0; i <= L; i++) {
 		vec tmp(d[i]+1);
@@ -137,7 +141,7 @@ vector<vec> nnet::make_input() {
 	return res;
 }
 
-vector<vec> nnet::make_signal() {
+vector<vec> nnet::make_signal() { //Constructs data structure for signal vectors
 	vector<vec> res(L);
 	for (int i = 1; i <= L; i++) {
 		vec tmp(d[i]);
@@ -146,7 +150,7 @@ vector<vec> nnet::make_signal() {
 	return res;
 }
 
-vector<vec> nnet::make_sensitivity() {
+vector<vec> nnet::make_sensitivity() { //Constructs data structure for sensitivity vectors
 	vector<vec> res(L);
 	for (int i = 1; i <= L; i++) {
 		vec tmp(d[i]);
@@ -155,7 +159,7 @@ vector<vec> nnet::make_sensitivity() {
 	return res;
 }
 
-vector<matrix> nnet::make_gradient() {
+vector<matrix> nnet::make_gradient() { //Constructs data structure to hold gradients
 	vector<matrix> res(L);
 	for (int i = 0; i < L; i++) {
 		res[i].assign(w[i].multiply(0));
@@ -163,7 +167,7 @@ vector<matrix> nnet::make_gradient() {
 	return res;
 }
 
-void nnet::clear_gradient(vector<matrix> &G) {
+void nnet::clear_gradient(vector<matrix> &G) { //Zeros out a gradient
 	for (int k = 0; k < G.size(); k++) {
 		for (int i = 0; i < G[k].row_dim(); i++) {
 			for (int j = 0; j < G[k].col_dim(); j++) {
@@ -175,7 +179,7 @@ void nnet::clear_gradient(vector<matrix> &G) {
 
 
 
-double nnet::fprop(vec x, vector<vec> &X, vector<vec> &S) {
+double nnet::fprop(vec x, vector<vec> &X, vector<vec> &S) { //Forward propagation routine
 	X[0].assign(x);
 	for (int l = 0; l < L; l++) {
 		S[l].assign(X[l].multiply(w[l].transpose()));
@@ -184,7 +188,7 @@ double nnet::fprop(vec x, vector<vec> &X, vector<vec> &S) {
 	return X[L].get(1);
 }
 
-void nnet::bprop(vector<vec> &X, vector<vec> &Delta) {
+void nnet::bprop(vector<vec> &X, vector<vec> &Delta) { //Backpropagation routine
 	Delta[L-1].assign(inverse_signal(X[L])); 
 	vec T;
 	for (int l = L-2; l >= 0; l--) {
@@ -194,6 +198,7 @@ void nnet::bprop(vector<vec> &X, vector<vec> &Delta) {
 }
 
 vector<double> nnet::predict1(vector<vector<double> > &D, vector<vec> &X, vector<vec> &S) {
+	//Internal prediction method that does not "classify"
 	vector<double> res(D.size());
 	for (int i = 0; i < D.size(); i++) {
 		vec x;
@@ -205,6 +210,7 @@ vector<double> nnet::predict1(vector<vector<double> > &D, vector<vec> &X, vector
 
 void nnet::update_gradient(vector<vec> &X, vector<vec> &Delta, vector<matrix> &G,
 													 vector<matrix> &G_up, int y, int N) {
+	//Updates the gradient based on the results of forward and backpropagation
 	for (int l = 0; l < L; l++) {
 		G_up[l].assign(Delta[l].outer_prod(X[l]).multiply(2*(X[L].get(1)-y)/N));
 		G[l].assign(G[l].add(G_up[l]));
@@ -212,6 +218,7 @@ void nnet::update_gradient(vector<vec> &X, vector<vec> &Delta, vector<matrix> &G
 }
 
 void nnet::update_weights(double eta, vector<matrix> &G) {
+	//Updates the network weights based on the computed gradient
 	for (int l = 0; l < L; l++) {
 		w[l].assign(w[l].add(G[l].multiply(-eta)));
 	}
@@ -221,6 +228,7 @@ void nnet::update_weights(double eta, vector<matrix> &G) {
 //Helper Functions
 
 vector<vector<double> > read_csv(string file_name,int dim_data) {
+	//Helper function for reading csv files
 	ifstream file(file_name.c_str());
 	vector<vector<double> > res;
 	while (file.is_open() && !file.eof()) {
@@ -242,7 +250,7 @@ vector<vector<double> > read_csv(string file_name,int dim_data) {
 				start = i+1;
 				count++;
 			}
-				if (count == dim_data-1) {
+				if (count == dim_data-1) { //If we're on the last cell, just read it in
 					string tmp;
 					for (int j = start; j < line.size(); j++) {
 						tmp.push_back(line[j]);
@@ -259,6 +267,7 @@ vector<vector<double> > read_csv(string file_name,int dim_data) {
 }
 
 vector<int> read_response(string file_name) {
+	//Reads a 1-column csv of a response variable 
 	ifstream file(file_name.c_str());
 	vector<int> res;
 	while(file.is_open() && !file.eof()) {
@@ -272,6 +281,7 @@ vector<int> read_response(string file_name) {
 }
 
 vector<double> compute_norms(vector<vector<double> > &D) {
+	//Computes the vector norms of each data point
 	vector<double> res;
 	for (int i = 0; i < D.size(); i++) {
 		double tmp = 0;
@@ -284,6 +294,7 @@ vector<double> compute_norms(vector<vector<double> > &D) {
 }
 
 double max_norm(vector<double> &x) {
+	//Function for computing the max of a vector, used to find the maximum vector norm
 	double max = 0;
 	for (int i = 0; i < x.size(); i++) {
 		if (x[i] >= max) {max = x[i];}
@@ -292,6 +303,7 @@ double max_norm(vector<double> &x) {
 }
 
 vec aug_one(vector<double> v) {
+	//Augments a data point with a one for the bias term
 	vec one(1,1);
 	vec arg(v.size());
 	for (int i = 0; i < v.size(); i++) {
@@ -301,6 +313,7 @@ vec aug_one(vector<double> v) {
 }
 
 vector<double> sig_map(vec s) {
+	//Performs the sigmoid mapping to produce the signal vector
 	vector<double> res;
 	for (int i = 0; i < s.length(); i++) {
 		res.push_back(tanh(s.get(i)));
@@ -309,6 +322,7 @@ vector<double> sig_map(vec s) {
 }
 
 vec inverse_signal(vec x) {
+	//Computes the derivative of the signal for backpropagation
 	vec res(x.length()-1);
 	for (int i = 1; i < x.length(); i++) {
 		res.mod(i-1,(1-pow(x.get(i),2)));
@@ -317,6 +331,7 @@ vec inverse_signal(vec x) {
 }
 
 double reg_error(vector<double> y_pred, vector<int> y) {
+	//Computes the regression (squared error) between a prediction and a true response
 	if (y_pred.size() == y.size()) {
 		double E = 0;
 		for (int i = 0; i < y.size(); i++) {
@@ -328,7 +343,7 @@ double reg_error(vector<double> y_pred, vector<int> y) {
 	else {return 100000000000000000;}
 }
 
-int sgn(double num) {
+int sgn(double num) { //Sign function
 	if (num > 0) {return 1;}
 	else if (num < 0) {return -1;}
 	else {return 0;}
